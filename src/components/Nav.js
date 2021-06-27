@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import logo from '../assets/icons/favicon-64.png';
 
 const Nav = () => {
+
     return (
         <StyledNav>
             <span>
@@ -10,8 +11,8 @@ const Nav = () => {
                 <LogoText to="/">Sajal Biswas<span></span></LogoText>
             </span>
             <span>
-                <StyledLink>Projects<span></span></StyledLink>
-                <StyledLink>About<span></span></StyledLink>
+                <StyledLink to="/projects">Projects<span></span></StyledLink>
+                <StyledLink to="/">About<span></span></StyledLink>
             </span>
         </StyledNav>
     )
@@ -55,7 +56,7 @@ const LogoText = styled(Link)`
         left: -100%;
         width: 100%;
         height: 1px;
-        background: #f5f3f4;
+        background: #e4e4e4;
         transition: 0.3s ease;
     }
     &:hover{
@@ -77,7 +78,7 @@ const StyledLink = styled(Link)`
         left: -100%;
         width: 100%;
         height: 1px;
-        background: #f5f3f4;
+        background: #e4e4e4;
         transition: 0.3s ease;
     }
     &:hover{

@@ -7,19 +7,28 @@ const GlobalStyles = createGlobalStyle`
         padding: 0;
         box-sizing: border-box;
         font-family: 'Satoshi', sans-serif;
-        z-index: 2;
+    }
+
+    ::-webkit-scrollbar {
+        display: none;
+    }
+
+    html {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 
     body {
         background: #1b1b1b;
-        color: #f5f3f4;
+        /* color: #f5f3f4; */
+        color: #e4e4e4;
     }
 
     .webgl {
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 1;
+        z-index: -1;
         pointer-events: none;
     }
 
@@ -44,7 +53,11 @@ const GlobalStyles = createGlobalStyle`
     }
 
     a{
-        color: #f5f3f4;
+        color: #e4e4e4;
+    }
+
+    .webgl-img{
+        opacity: 0;
     }
 `;
 

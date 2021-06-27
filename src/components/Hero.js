@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 const Hero = () => {
-    return(
+    return (
         <StyledHero>
             <h1>FRONT-END</h1>
             <h1>WEB DEVELOPER</h1>
@@ -18,7 +18,6 @@ const StyledHero = styled.div`
     h1{
         font-size: 6rem;
         line-height: 1;
-        color: #f5f3f4;
     }
 `;
 

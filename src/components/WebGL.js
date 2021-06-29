@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import imagesLoaded from 'imagesloaded';
 import FontFaceObserver from 'fontfaceobserver';
 import gsap from 'gsap';
@@ -31,6 +30,7 @@ export default class WebGL {
 
         this.renderer.setSize(this.sizes.width, this.sizes.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
 
         (options.dom).appendChild(this.renderer.domElement);
 
@@ -83,7 +83,6 @@ export default class WebGL {
         this.renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(this.renderPass);
 
-        let counter = 0.0;
         this.myEffect = {
             uniforms: {
                 "tDiffuse": { value: null },
@@ -145,6 +144,8 @@ export default class WebGL {
 
         this.renderer.setSize(this.sizes.width, this.sizes.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        this.setPosition();
     }
 
     addImages() {

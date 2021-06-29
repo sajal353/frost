@@ -1,6 +1,11 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import imagesLoaded from 'imagesloaded';
 import FontFaceObserver from 'fontfaceobserver';
+import gsap from 'gsap';
 
 export default class WebGL {
     constructor(options) {
@@ -10,6 +15,7 @@ export default class WebGL {
         };
 
         this.scene = new THREE.Scene();
+        // this.scene.background = new THREE.Color(0x1b1b1b);
 
         this.fov = (180 * (2 * Math.atan(window.innerHeight / 2 / 1000))) / Math.PI;
 
@@ -48,14 +54,19 @@ export default class WebGL {
 
         this.currentScroll = 0;
 
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+
         Promise.all(allDone).then(() => {
 
             this.addImages();
             this.setPosition();
 
+            this.mouseMovement();
             this.resize();
             this.setupResize();
             this.playGround();
+            this.composerPass();
             this.tick();
 
             window.addEventListener('scroll', () => {
@@ -65,6 +76,60 @@ export default class WebGL {
 
         })
 
+    }
+
+    composerPass() {
+        this.composer = new EffectComposer(this.renderer);
+        this.renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(this.renderPass);
+
+        let counter = 0.0;
+        this.myEffect = {
+            uniforms: {
+                "tDiffuse": { value: null },
+            },
+            vertexShader: `
+                varying vec2 vUv;
+
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                varying vec2 vUv;
+                
+                void main(){
+                    vec2 newUV = vUv;
+                    float area = smoothstep(0.4, 0.0, vUv.y);
+                    newUV.x -= (vUv.x - 0.5) * 0.1 * area;
+                    gl_FragColor = texture2D(tDiffuse, newUV);
+                }
+            `
+        }
+
+        this.customPass = new ShaderPass(this.myEffect);
+        this.customPass.renderToScreen = true;
+
+        this.composer.addPass(this.customPass);
+    }
+
+    mouseMovement() {
+        window.addEventListener('mousemove', (event) => {
+            this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+
+            const intersects = this.raycaster.intersectObjects(this.scene.children)
+
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                obj.material.uniforms.hover.value = intersects[0].uv;
+            }
+
+        });
     }
 
     setupResize() {
@@ -83,48 +148,16 @@ export default class WebGL {
     }
 
     addImages() {
-        this.imageStore = this.images.map(img => {
 
-            let bounds = img.getBoundingClientRect(0);
-
-            let geometry = new THREE.PlaneBufferGeometry(bounds.width, bounds.height, 1, 1);
-
-            let texture = new THREE.Texture(img);
-            texture.needsUpdate = true;
-
-            let material = new THREE.MeshBasicMaterial({
-                map: texture
-            });
-
-            let mesh = new THREE.Mesh(geometry, material);
-
-            this.scene.add(mesh);
-
-            return {
-                img: img,
-                mesh: mesh,
-                top: bounds.top,
-                left: bounds.left,
-                width: bounds.width,
-                height: bounds.height
-            }
-        });
-    }
-
-    setPosition() {
-        this.imageStore.forEach(o => {
-            o.mesh.position.y = this.currentScroll - o.top + this.sizes.height / 2 - o.height / 2;
-            o.mesh.position.x = o.left - this.sizes.width / 2 + o.width / 2;
-        });
-    }
-
-    playGround() {
-        this.planeMaterial = new THREE.ShaderMaterial({
+        this.material = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
+                uImage: { value: 0 },
+                hover: { value: new THREE.Vector2(0.5, 0.5) },
+                hoverState: { value: 0 }
             },
             side: THREE.DoubleSide,
-            wireframe: true,
+            wireframe: false,
             vertexShader: `
                         //	Classic Perlin 3D Noise 
                         //	by Stefan Gustavson
@@ -202,35 +235,124 @@ export default class WebGL {
                         }
         
                         uniform float time;
+                        uniform vec2 hover;
+                        uniform float hoverState;
                         varying float vNoise;
                         varying vec2 vUv;
         
                         void main() {
                             vec3 newPosition = position;
                             float PI = 3.1415925;
+
+                            float noise = cnoise(3.0 * vec3(position.x , position.y, position.z + time));
+
+                            float dist = distance(uv, hover);
+
+                            newPosition.z += hoverState * 20.0 * sin(dist * 10.0 + time * 2.0);
+
+                            vNoise = hoverState * sin(dist * 5.0 - time * 0.5);
+                            vUv = uv;
         
                             gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
                         }
                     `,
             fragmentShader: `
+                    uniform sampler2D uImage;
                     uniform float time;
+                    uniform float hoverState;
                     varying float vNoise;
                     varying vec2 vUv;
         
-                        void main() {
-                            gl_FragColor = vec4(vUv, 0.0, 1.0);
-                        }
+                    void main() {
+                        vec2 newUV = vUv;
+
+                        vec2 p = newUV;
+                        float x = hoverState;
+
+                        x = smoothstep(0.0, 1.0, (x * 2.0 + p.y - 1.0));
+
+                        vec4 f = mix(
+                            texture2D(uImage, (p - 0.5) * (1.0 - x) + 0.5),
+                            texture2D(uImage, (p - 0.5) * x + 0.5),
+                            x
+                        );
+
+
+                        vec4 texture = texture2D(uImage, newUV);
+                        // gl_FragColor = vec4(0.0, vNoise, 0.0, 1.0);
+                        gl_FragColor = f;
+                        gl_FragColor.rgb += 0.01 * vec3(vNoise);
+                    }
                     `
         });
+
+        this.materials = [];
+
+        this.imageStore = this.images.map(img => {
+
+            let bounds = img.getBoundingClientRect(0);
+
+            let geometry = new THREE.PlaneBufferGeometry(bounds.width, bounds.height, 32, 32);
+
+            let texture = new THREE.Texture(img);
+            texture.needsUpdate = true;
+
+            let material = this.material.clone();
+
+            img.addEventListener('mouseenter', () => {
+                gsap.to(material.uniforms.hoverState, {
+                    duration: 1,
+                    value: 1
+                });
+            });
+
+            img.addEventListener('mouseout', () => {
+                gsap.to(material.uniforms.hoverState, {
+                    duration: 1,
+                    value: 0
+                });
+            });
+
+            this.materials.push(material);
+
+            material.uniforms.uImage.value = texture;
+
+            let mesh = new THREE.Mesh(geometry, material);
+
+            this.scene.add(mesh);
+
+            return {
+                img: img,
+                mesh: mesh,
+                top: bounds.top,
+                left: bounds.left,
+                width: bounds.width,
+                height: bounds.height
+            }
+        });
+    }
+
+    setPosition() {
+        this.imageStore.forEach(o => {
+            o.mesh.position.y = this.currentScroll - o.top + this.sizes.height / 2 - o.height / 2;
+            o.mesh.position.x = o.left - this.sizes.width / 2 + o.width / 2;
+        });
+    }
+
+    playGround() {
+
 
     }
 
     tick() {
         let elapsedTime = this.clock.getElapsedTime();
-        this.planeMaterial.uniforms.time.value = elapsedTime;
+        this.materials.forEach(m => {
+            m.uniforms.time.value = elapsedTime;
+        });
 
         window.requestAnimationFrame(this.tick.bind(this));
-        this.renderer.render(this.scene, this.camera);
+        // this.renderer.render(this.scene, this.camera);
+        this.composer.render();
     }
 }
 

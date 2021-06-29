@@ -19,6 +19,7 @@ const Nav = () => {
 };
 
 const StyledNav = styled.nav`
+    z-index: 10;
     position: fixed;
     width: 100%;
     top: 0;

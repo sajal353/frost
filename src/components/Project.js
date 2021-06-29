@@ -1,6 +1,7 @@
 import styled from "styled-components";
 
 const Project = (props) => {
+
     return (
         <StyledProject>
             <div>

@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import gsap from 'gsap';
+import CANNON from 'cannon';
 
 export default class WebGL {
     constructor(options) {
@@ -12,16 +14,12 @@ export default class WebGL {
         };
 
         this.scene = new THREE.Scene();
-        // this.scene.background = new THREE.Color(0x1b1b1b);
+        this.scene.background = new THREE.Color(0x1b1b1b);
 
         this.fov = 75;
 
         this.camera = new THREE.PerspectiveCamera(this.fov, this.sizes.width / this.sizes.height, 0.1, 1000);
-        this.camera.position.z = 3;
-        this.camera.rotation.x = 0.101108338;
-        this.camera.rotation.y = -0.49260244;
-        this.camera.rotation.z = 0.047943049;
-
+        this.camera.position.y = 3;
         this.scene.add(this.camera);
 
         this.renderer = new THREE.WebGLRenderer({
@@ -32,6 +30,7 @@ export default class WebGL {
         this.renderer.setSize(this.sizes.width, this.sizes.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.toneMappingExposure = Math.pow(1.15, 4.0);
 
         (options.dom).appendChild(this.renderer.domElement);
 
@@ -41,31 +40,46 @@ export default class WebGL {
 
         this.mouse = new THREE.Vector2();
 
-        // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
 
-        this.fog = new THREE.Fog('#ffffff', 1, 10);
-        this.scene.fog = this.fog;
+        this.previousTime = 0;
 
-
-        this.mouseMovement();
+        this.composerPass();
         this.resize();
         this.setupResize();
+        this.lights();
+        this.physics();
         this.playGround();
-        this.composerPass();
+        this.mouseMovement();
         this.tick();
 
     }
 
     composerPass() {
         this.composer = new EffectComposer(this.renderer);
+        this.composer.outputEncoding = THREE.sRGBEncoding;
+
+        this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        this.bloomPass.threshold = 0;
+        this.bloomPass.strength = 1.0;
+        this.bloomPass.radius = 1;
+
         this.renderPass = new RenderPass(this.scene, this.camera);
+
         this.composer.addPass(this.renderPass);
+        this.composer.addPass(this.bloomPass);
+
     }
 
     mouseMovement() {
         window.addEventListener('mousemove', (event) => {
             this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            this.sphereBody.position.x = this.mouse.x * 4.5;
+            this.sphereBody.position.z = - this.mouse.y * 2;
+            this.sphereBody.position.y = 0;
         });
     }
 
@@ -82,152 +96,169 @@ export default class WebGL {
 
         this.renderer.setSize(this.sizes.width, this.sizes.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        this.composer.setSize(this.sizes.width, this.sizes.height);
+        this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    }
+
+    lights() {
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.06);
+        // this.pointLight = new THREE.PointLight(0xffffff, 0.5);
+        // this.pointLight.position.set(0, 3, 0);
+        // this.pointLight.castShadow = true;
+        // this.pointLight.shadow.mapSize.width = 1024;
+        // this.pointLight.shadow.mapSize.height = 1024;
+        // this.pointLight.shadow.radius = 5;
+
+        this.scene.add(this.ambientLight);
+        // this.scene.add(this.pointLight);
+
+    }
+
+    physics() {
+        this.world = new CANNON.World();
+        this.world.broadphase = new CANNON.SAPBroadphase(this.world);
+        this.world.allowSleep = false;
+        this.world.gravity.set(0, -9.81, 0);
+
+        this.defaultMaterial = new CANNON.Material();
+
+        this.defaultContactMaterial = new CANNON.ContactMaterial(
+            this.defaultMaterial,
+            this.defaultMaterial,
+            {
+                friction: 0.1,
+                restitution: 0.7
+            }
+        );
+        this.world.addContactMaterial(this.defaultContactMaterial);
+        this.world.defaultContactMaterial = this.defaultContactMaterial;
+
+        const floorShape = new CANNON.Plane();
+        const floorBody = new CANNON.Body({
+            mass: 0,
+            shape: floorShape,
+            material: this.defaultMaterial
+        });
+        floorBody.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(1, 0, 0),
+            - Math.PI * 0.5);
+        this.world.addBody(floorBody);
+
+        this.sphereShape = new CANNON.Box(new CANNON.Vec3(0.5 / 2, 0.5 / 2, 0.5 / 2));
+        this.sphereBody = new CANNON.Body({
+            mass: 10,
+            position: new CANNON.Vec3(0, 0, 0),
+            shape: this.sphereShape,
+            material: this.defaultMaterial
+        });
+
+        this.world.addBody(this.sphereBody);
+
     }
 
     playGround() {
 
-        this.geometry = new THREE.BufferGeometry();
+        this.sphere = new THREE.Mesh(
+            new THREE.BoxBufferGeometry(0.5, 0.5, 0.5),
+            new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                wireframe: true,
+                transparent: true,
+                opacity: 0
+            })
+        )
 
-        this.count = 5000;
+        this.scene.add(this.sphere);
 
-        this.positions = new Float32Array(this.count * 3);
 
-        for (let i = 0; i < this.count; i++) {
-            const i3 = i * 3;
+        this.plane = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(10, 10),
+            new THREE.MeshStandardMaterial({ color: 0x1b1b1b })
+        );
+        this.plane.receiveShadow = true;
+        this.plane.rotation.x = - (Math.PI * 0.5);
 
-            this.positions[i3] = (Math.random() - 0.5) * 20;
-            this.positions[i3 + 1] = 0;
-            this.positions[i3 + 2] = (Math.random() - 0.5) * 20;
-        }
+        this.scene.add(this.plane);
 
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
 
-        this.material = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                amplitude: { value: 0.15 }
-            },
-            depthWrite: false,
-            blending: THREE.AdditiveBlending,
-            vertexColors: true,
-            vertexShader: `
-                //	Classic Perlin 3D Noise 
-                //	by Stefan Gustavson
-                //
-                vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-                vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
-                vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+        this.objectsToUpdate = [];
 
-                float cnoise(vec3 P){
-                    vec3 Pi0 = floor(P); // Integer part for indexing
-                    vec3 Pi1 = Pi0 + vec3(1.0); // Integer part + 1
-                    Pi0 = mod(Pi0, 289.0);
-                    Pi1 = mod(Pi1, 289.0);
-                    vec3 Pf0 = fract(P); // Fractional part for interpolation
-                    vec3 Pf1 = Pf0 - vec3(1.0); // Fractional part - 1.0
-                    vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
-                    vec4 iy = vec4(Pi0.yy, Pi1.yy);
-                    vec4 iz0 = Pi0.zzzz;
-                    vec4 iz1 = Pi1.zzzz;
+        this.boxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
+        this.boxMaterial = new THREE.MeshBasicMaterial({
+            color: 0xe4e4e4,
+            metalness: 0.3,
+            roughness: 0.4
+        });
 
-                    vec4 ixy = permute(permute(ix) + iy);
-                    vec4 ixy0 = permute(ixy + iz0);
-                    vec4 ixy1 = permute(ixy + iz1);
+        const createBox = (size, position) => {
+            const mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(size.x, size.y, size.z), this.boxMaterial);
+            mesh.castShadow = true;
+            mesh.position.copy(position);
+            this.scene.add(mesh);
 
-                    vec4 gx0 = ixy0 / 7.0;
-                    vec4 gy0 = fract(floor(gx0) / 7.0) - 0.5;
-                    gx0 = fract(gx0);
-                    vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
-                    vec4 sz0 = step(gz0, vec4(0.0));
-                    gx0 -= sz0 * (step(0.0, gx0) - 0.5);
-                    gy0 -= sz0 * (step(0.0, gy0) - 0.5);
+            const shape = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+            const body = new CANNON.Body({
+                mass: 1,
+                position: new CANNON.Vec3(0, 5, 0),
+                shape,
+                material: this.defaultMaterial
+            });
+            body.position.copy(position);
+            // body.addEventListener('collide', playHitSound);
+            this.world.addBody(body);
 
-                    vec4 gx1 = ixy1 / 7.0;
-                    vec4 gy1 = fract(floor(gx1) / 7.0) - 0.5;
-                    gx1 = fract(gx1);
-                    vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
-                    vec4 sz1 = step(gz1, vec4(0.0));
-                    gx1 -= sz1 * (step(0.0, gx1) - 0.5);
-                    gy1 -= sz1 * (step(0.0, gy1) - 0.5);
+            this.objectsToUpdate.push({
+                mesh: mesh,
+                body: body
+            });
+        };
 
-                    vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
-                    vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
-                    vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
-                    vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
-                    vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
-                    vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
-                    vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
-                    vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
+        this.meshCount = 0;
 
-                    vec4 norm0 = taylorInvSqrt(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
-                    g000 *= norm0.x;
-                    g010 *= norm0.y;
-                    g100 *= norm0.z;
-                    g110 *= norm0.w;
-                    vec4 norm1 = taylorInvSqrt(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
-                    g001 *= norm1.x;
-                    g011 *= norm1.y;
-                    g101 *= norm1.z;
-                    g111 *= norm1.w;
+        setInterval(() => {
+            if (this.meshCount < 50) {
+                createBox(
+                    {
+                        x: Math.abs(Math.random() - 0.5),
+                        y: Math.abs(Math.random() - 0.5),
+                        z: Math.abs(Math.random() - 0.5)
+                    },
+                    {
+                        x: (Math.random() - 0.5) * 8,
+                        y: 2,
+                        z: (Math.random() - 0.5) * 8
+                    }
+                );
 
-                    float n000 = dot(g000, Pf0);
-                    float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
-                    float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
-                    float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
-                    float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
-                    float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
-                    float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
-                    float n111 = dot(g111, Pf1);
+                this.meshCount++;
 
-                    vec3 fade_xyz = fade(Pf0);
-                    vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
-                    vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
-                    float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x); 
-                    return 2.2 * n_xyz;
-                }
+            }
+        }, 200);
 
-                uniform float time;
-                uniform float amplitude;
-                varying float vNoise;
-                varying vec2 vUv;
 
-                void main() {
-                    vec3 newPosition = position;
-                    float PI = 3.1415925;
 
-                    // newPosition.y += 0.5 * cnoise(vec3(position.x * 4.0 , position.y * 4.0 , position.z * 4.0 + time));
 
-                    newPosition.y += 0.5 * sin((newPosition.x + 0.25 + - time) * amplitude * PI);
-
-                    vUv = uv;
-
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-
-                    gl_PointSize = 2.0;
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                varying float vNoise;
-                varying vec2 vUv;
-
-                void main() {
-                    gl_FragColor = vec4(0.894117, 0.894117, 0.894117, 1.0);
-                }
-            `
-        })
-
-        this.mesh = new THREE.Points(this.geometry, this.material);
-
-        this.mesh.rotation.x = Math.PI / 8;
-
-        this.scene.add(this.mesh);
 
     }
 
     tick() {
+
         let elapsedTime = this.clock.getElapsedTime();
-        this.material.uniforms.time.value = elapsedTime;
+        const deltaTime = elapsedTime - this.previousTime;
+        this.previousTime = elapsedTime;
+
+        this.world.step(1 / 60, deltaTime, 3);
+
+        for (const object of this.objectsToUpdate) {
+            object.mesh.position.copy(object.body.position);
+            object.mesh.quaternion.copy(object.body.quaternion);
+        };
+
+        this.sphere.position.copy(this.sphereBody.position);
+
+        // this.material.uniforms.time.value = elapsedTime;
 
         this.composer.render();
         // this.renderer.render(this.scene, this.camera);

@@ -4,11 +4,12 @@ import { useEffect } from "react";
 import WebGL from '../components/WebGL2';
 
 const Home = () => {
+
     useEffect(() => {
         new WebGL({
-            dom: document.querySelector('.webgl')
-        })
-    }, []);
+            dom: document.querySelector('.webgl'),
+        });
+    });
 
     return (
         <>
@@ -17,5 +18,7 @@ const Home = () => {
         </>
     )
 };
+
+
 
 export default Home;

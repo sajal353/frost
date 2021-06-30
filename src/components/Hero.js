@@ -10,6 +10,8 @@ const Hero = () => {
 }
 
 const StyledHero = styled.div`
+    position: absolute;
+    z-index: 2;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -18,6 +20,7 @@ const StyledHero = styled.div`
     h1{
         font-size: 6rem;
         line-height: 1;
+        display: none;
     }
 `;
 

@@ -63,10 +63,10 @@ export default class WebGL {
             this.setPosition();
 
             this.mouseMovement();
-            this.resize();
             this.setupResize();
             this.playGround();
             this.composerPass();
+            this.resize();
             this.tick();
 
             window.addEventListener('scroll', () => {
@@ -133,6 +133,7 @@ export default class WebGL {
 
     setupResize() {
         window.addEventListener("resize", this.resize.bind(this));
+        window.addEventListener("resize", this.setPosition.bind(this));
     }
 
     resize() {
@@ -145,7 +146,8 @@ export default class WebGL {
         this.renderer.setSize(this.sizes.width, this.sizes.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        this.setPosition();
+        this.composer.setSize(this.sizes.width, this.sizes.height);
+        this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     }
 
     addImages() {

@@ -40,6 +40,10 @@ const StyledContact = styled.div`
   padding: 2rem;
   h1 {
     font-size: 4rem;
+    text-align: center;
+    @media (max-width: 768px){
+      font-size: 2rem;
+    }
   }
   div {
     margin: 1rem 0;

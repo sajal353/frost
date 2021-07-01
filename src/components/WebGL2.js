@@ -163,6 +163,7 @@ export default class WebGL {
     }
 
     resize() {
+
         this.sizes.width = window.innerWidth;
         this.sizes.height = window.innerHeight;
 

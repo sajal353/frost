@@ -41,6 +41,9 @@ const StyledProjects = styled.div`
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
+    @media (max-width: 600px) {
+        margin-top: 4rem;
+    }
     h1{
         text-align: center;
     }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Switch, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import GlobalStyles from './components/GlobalStyles';
@@ -12,12 +12,6 @@ import About from './pages/About';
 const App = () => {
 
   const location = useLocation();
-
-  useEffect(() => {
-    window.addEventListener('resize', () => {
-      window.location.reload();
-    })
-  });
 
   return (
     <div className="App">

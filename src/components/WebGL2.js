@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+// import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 // import gsap from 'gsap';
@@ -137,13 +137,13 @@ export default class WebGL {
         this.bloomPass.strength = 1.0;
         this.bloomPass.radius = 1;
 
-        this.smaaPass = new SMAAPass(window.innerWidth * this.renderer.getPixelRatio(), window.innerHeight * this.renderer.getPixelRatio());
+        // this.smaaPass = new SMAAPass(window.innerWidth * this.renderer.getPixelRatio(), window.innerHeight * this.renderer.getPixelRatio());
 
         this.renderPass = new RenderPass(this.scene, this.camera);
 
         this.composer.addPass(this.renderPass);
         this.composer.addPass(this.bloomPass);
-        this.composer.addPass(this.smaaPass);
+        // this.composer.addPass(this.smaaPass);
 
     }
 

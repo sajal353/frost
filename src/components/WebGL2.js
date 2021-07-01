@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import gsap from 'gsap';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// import gsap from 'gsap';
 import CANNON from 'cannon';
+import logoModel from '../assets/models/logo.gltf';
 
 export default class WebGL {
     constructor(options) {
@@ -20,11 +22,12 @@ export default class WebGL {
 
         this.camera = new THREE.PerspectiveCamera(this.fov, this.sizes.width / this.sizes.height, 0.1, 1000);
         this.camera.position.y = 3;
+        this.camera.lookAt(new THREE.Vector3(0, 0, 0));
         this.scene.add(this.camera);
 
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
-            alpha: true
+            alpha: false
         });
 
         this.renderer.setSize(this.sizes.width, this.sizes.height);
@@ -40,20 +43,88 @@ export default class WebGL {
 
         this.mouse = new THREE.Vector2();
 
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
+        // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
         this.previousTime = 0;
 
-        this.composerPass();
-        this.resize();
-        this.setupResize();
-        this.lights();
-        this.physics();
-        this.playGround();
-        this.mouseMovement();
-        this.tick();
+        this.gltfLoader = new GLTFLoader();
 
+        this.loadModel();
+
+    }
+
+    setQuaternionFromProperEuler(q, a, b, c, order) {
+
+        // Intrinsic Proper Euler Angles - see https://en.wikipedia.org/wiki/Euler_angles
+
+        // rotations are applied to the axes in the order specified by 'order'
+        // rotation by angle 'a' is applied first, then by angle 'b', then by angle 'c'
+        // angles are in radians
+
+        const cos = Math.cos;
+        const sin = Math.sin;
+
+        const c2 = cos(b / 2);
+        const s2 = sin(b / 2);
+
+        const c13 = cos((a + c) / 2);
+        const s13 = sin((a + c) / 2);
+
+        const c1_3 = cos((a - c) / 2);
+        const s1_3 = sin((a - c) / 2);
+
+        const c3_1 = cos((c - a) / 2);
+        const s3_1 = sin((c - a) / 2);
+
+        switch (order) {
+
+            case 'XYX':
+                q.set(c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13);
+                break;
+
+            case 'YZY':
+                q.set(s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13);
+                break;
+
+            case 'ZXZ':
+                q.set(s2 * c1_3, s2 * s1_3, c2 * s13, c2 * c13);
+                break;
+
+            case 'XZX':
+                q.set(c2 * s13, s2 * s3_1, s2 * c3_1, c2 * c13);
+                break;
+
+            case 'YXY':
+                q.set(s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13);
+                break;
+
+            case 'ZYZ':
+                q.set(s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13);
+                break;
+
+            default:
+                console.warn('THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order: ' + order);
+
+        }
+
+    }
+
+    loadModel() {
+        this.gltfLoader.load(logoModel,
+            (gltf) => {
+                this.model = gltf.scene;
+
+
+                this.composerPass();
+                this.resize();
+                this.setupResize();
+                this.lights();
+                this.physics();
+                this.playGround();
+                this.mouseMovement();
+                this.tick();
+            }
+        );
     }
 
     composerPass() {
@@ -185,32 +256,51 @@ export default class WebGL {
 
         this.objectsToUpdate = [];
 
-        this.boxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-        this.boxMaterial = new THREE.MeshBasicMaterial({
+        this.dropMaterial = new THREE.MeshBasicMaterial({
             color: 0xe4e4e4,
-            metalness: 0.3,
-            roughness: 0.4
         });
 
-        const createBox = (size, position) => {
-            const mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(size.x, size.y, size.z), this.boxMaterial);
-            mesh.castShadow = true;
-            mesh.position.copy(position);
-            this.scene.add(mesh);
+        this.model.traverse((o) => {
+            if (o.isMesh) o.material = this.dropMaterial;
+        });
 
-            const shape = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+        this.model.scale.set(0.25, 0.25, 0.25);
+
+        this.scene.add(this.model);
+
+        const createBox = (position) => {
+
+            const scale = Math.abs(Math.random() - 0.5) * 0.25;
+
+            const q = new THREE.Vector4();
+
+            this.setQuaternionFromProperEuler(q, Math.random() * 89, Math.random() * 89, Math.random() * 89, 'XYX');
+
+            const dropModel = this.model.clone();
+
+            dropModel.traverse((o) => {
+                if (o.isMesh) o.material = this.dropMaterial;
+            });
+
+            dropModel.position.set(position);
+            dropModel.scale.set(scale, scale, scale);
+
+            this.scene.add(dropModel);
+
+            const shape = new CANNON.Box(new CANNON.Vec3(8 * scale / 2, 0.125 / 2, 8 * scale / 2));
             const body = new CANNON.Body({
                 mass: 1,
                 position: new CANNON.Vec3(0, 5, 0),
+                quaternion: q,
                 shape,
                 material: this.defaultMaterial
             });
             body.position.copy(position);
-            // body.addEventListener('collide', playHitSound);
+
             this.world.addBody(body);
 
             this.objectsToUpdate.push({
-                mesh: mesh,
+                mesh: dropModel,
                 body: body
             });
         };
@@ -220,11 +310,6 @@ export default class WebGL {
         setInterval(() => {
             if (this.meshCount < 50) {
                 createBox(
-                    {
-                        x: Math.abs(Math.random() - 0.5),
-                        y: Math.abs(Math.random() - 0.5),
-                        z: Math.abs(Math.random() - 0.5)
-                    },
                     {
                         x: (Math.random() - 0.5) * 8,
                         y: 2,

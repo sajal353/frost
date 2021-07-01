@@ -23,10 +23,10 @@ const Projects = () => {
             <div className="webgl"></div>
             <StyledProjects>
                 <h1>Projects</h1>
-                <Project title={'GridMatrix'} image={projectImg1} />
-                <Project title={'White Glove CLub'} image={projectImg2} />
-                <Project title={'3D Showroom'} image={projectImg3} />
-                <Project title={'LiquidKlear'} image={projectImg4} />
+                <Project title={'GridMatrix'} link={'www.gridmatrix.com'} image={projectImg1} />
+                <Project title={'White Glove Club'} link={'www.whitegloveclubcr.com'} image={projectImg2} />
+                <Project title={'3D Showroom'} shortDescription={'On going...'} image={projectImg3} />
+                <Project title={'LiquidKlear'} shortDescription={'On going...'} image={projectImg4} />
             </StyledProjects>
         </>
     )
@@ -35,6 +35,10 @@ const Projects = () => {
 const StyledProjects = styled.div`
     width: 100%;
     padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
     h1{
         text-align: center;
     }

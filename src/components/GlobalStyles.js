@@ -29,7 +29,7 @@ const GlobalStyles = createGlobalStyle`
         top: 0;
         left: 0;
         z-index: 1;
-        /* pointer-events: none; */
+        pointer-events: none;
     }
 
     .curtain{

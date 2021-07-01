@@ -1,5 +1,5 @@
 import styled from "styled-components";
-
+import { motion } from "framer-motion";
 import Project from "../components/Project";
 
 import projectImg1 from '../assets/projects/gridmatrix/hero.png';
@@ -9,6 +9,7 @@ import projectImg4 from '../assets/projects/liquidklear/hero.png';
 
 import { useEffect } from "react";
 import WebGL from '../components/WebGL';
+import Contact from "../components/Contact";
 
 const Projects = () => {
 
@@ -19,7 +20,7 @@ const Projects = () => {
     });
 
     return (
-        <>
+        <motion.div key="projects" animate={{ opacity: 1, transition: { duration: 1 } }} initial={{ opacity: 0 }} exit={{ opacity: 0, transition: { duration: 1 } }}>
             <div className="webgl"></div>
             <StyledProjects>
                 <h1>Projects</h1>
@@ -28,7 +29,8 @@ const Projects = () => {
                 <Project title={'3D Showroom'} shortDescription={'On going...'} image={projectImg3} />
                 <Project title={'LiquidKlear'} shortDescription={'On going...'} image={projectImg4} />
             </StyledProjects>
-        </>
+            <Contact />
+        </motion.div>
     )
 };
 

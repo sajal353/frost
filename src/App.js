@@ -1,15 +1,23 @@
-import React from 'react';
-import { Switch, Route } from 'react-router-dom';
-
+import React, { useEffect } from 'react';
+import { Switch, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import GlobalStyles from './components/GlobalStyles';
 // import Curtain from './components/Curtain';
 import Nav from './components/Nav';
 import Home from './pages/Home';
 import Projects from './pages/Projects';
-
+import About from './pages/About';
 
 
 const App = () => {
+
+  const location = useLocation();
+
+  useEffect(() => {
+    window.addEventListener('resize', () => {
+      window.location.reload();
+    })
+  });
 
   return (
     <div className="App">
@@ -17,18 +25,23 @@ const App = () => {
       <GlobalStyles />
       <Nav />
 
-      <Switch>
+      <AnimatePresence exitBeforeEnter>
+        <Switch location={location} key={location.pathname}>
 
-        <Route path="/" exact>
-          <Home />
-        </Route>
+          <Route path="/" exact>
+            <Home />
+          </Route>
 
-        <Route path="/projects" exact>
-          <Projects />
-        </Route>
+          <Route path="/projects" exact>
+            <Projects />
+          </Route>
 
-      </Switch>
+          <Route path="/contact" exact>
+            <About />
+          </Route>
 
+        </Switch>
+      </AnimatePresence>
     </div>
   );
 }

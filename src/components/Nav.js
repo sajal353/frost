@@ -12,7 +12,7 @@ const Nav = () => {
             </span>
             <span>
                 <StyledLink to="/projects">Projects<span></span></StyledLink>
-                <StyledLink to="/">About<span></span></StyledLink>
+                <StyledLink to="/contact">Contact<span></span></StyledLink>
             </span>
         </StyledNav>
     )

@@ -2,10 +2,10 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import Project from "../components/Project";
 
-import projectImg1 from '../assets/projects/gridmatrix/hero.png';
-import projectImg2 from '../assets/projects/whitegloveclub/hero.png';
-import projectImg3 from '../assets/projects/showroom/hero.png';
-import projectImg4 from '../assets/projects/liquidklear/hero.png';
+import projectImg1 from '../assets/projects/gridmatrix/hero.webp';
+import projectImg2 from '../assets/projects/whitegloveclub/hero.webp';
+import projectImg3 from '../assets/projects/showroom/hero.webp';
+import projectImg4 from '../assets/projects/liquidklear/hero.webp';
 
 import { useEffect } from "react";
 import WebGL from '../components/WebGL';

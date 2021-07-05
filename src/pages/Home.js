@@ -10,7 +10,7 @@ const Home = () => {
         new WebGL({
             dom: document.querySelector('.webgl'),
         });
-    });
+    }, []);
 
     return (
         <StyledHero key="home" animate={{ opacity: 1, scale: 1, transition: { duration: 2 } }} initial={{ opacity: 0, scale: 1.2 }} exit={{ opacity: 0, transition: { duration: 1 } }}>

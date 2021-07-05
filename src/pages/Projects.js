@@ -17,7 +17,7 @@ const Projects = () => {
         new WebGL({
             dom: document.querySelector('.webgl'),
         })
-    });
+    }, []);
 
     return (
         <motion.div key="projects" animate={{ opacity: 1, transition: { duration: 1 } }} initial={{ opacity: 0 }} exit={{ opacity: 0, transition: { duration: 1 } }}>

@@ -147,13 +147,17 @@ export default class WebGL {
 
     }
 
+    lerp(start, end, time) {
+        return start * (1 - time) + end * time;
+    }
+
     mouseMovement() {
         window.addEventListener('mousemove', (event) => {
             this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
             this.sphereBody.position.x = this.mouse.x * 4.5;
-            this.sphereBody.position.z = - this.mouse.y * 2;
+            this.sphereBody.position.z = - this.mouse.y * 2.25;
             this.sphereBody.position.y = 0;
         });
     }
@@ -250,7 +254,7 @@ export default class WebGL {
 
 
         this.plane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(10, 10),
+            new THREE.PlaneBufferGeometry(20, 20),
             new THREE.MeshStandardMaterial({ color: 0x1b1b1b })
         );
         this.plane.receiveShadow = true;
@@ -349,6 +353,9 @@ export default class WebGL {
         };
 
         this.sphere.position.copy(this.sphereBody.position);
+
+        this.camera.position.x = this.lerp(this.camera.position.x, this.mouse.x * 0.5, 0.05);
+        this.camera.position.z = this.lerp(this.camera.position.z, -this.mouse.y * 0.5, 0.05);
 
         // this.material.uniforms.time.value = elapsedTime;
 

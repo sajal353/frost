@@ -38,11 +38,11 @@ const Projects = () => {
           dim
         >
           <p>
-            <b>Tech Stack:</b> React, Styled Components
+            <b>Tech Stack:</b> React, Next.js, Styled Components
           </p>
         </Project>
         <Project
-          title={"Art Central"}
+          title={"Art Central [Hobby]"}
           link={"art-central-bd.web.app"}
           image="/project-images/art-central.png"
           dim
@@ -71,7 +71,7 @@ const Projects = () => {
           </p>
         </Project>
         <Project
-          title={"3D Showroom"}
+          title={"3D Showroom [Hobby]"}
           link={"sajal353.github.io/car-showroom"}
           image="/project-images/showroom.webp"
         >
@@ -80,7 +80,45 @@ const Projects = () => {
           </p>
         </Project>
         <Project
-          title={"Portfolio"}
+          title={"Alpine Proxies [Unavailable]"}
+          link={"sajal353.github.io/alpine"}
+          image="/project-images/alpine.png"
+          dim
+        >
+          <p>
+            <b>Tech Stack:</b> HTML5, Scss
+          </p>
+        </Project>
+        <Project
+          title={"Asset Backed Crypto [Unavailable]"}
+          link={"sajal353.github.io/asset-backed-crypto"}
+          image="/project-images/asset-backed-crypto.png"
+        >
+          <p>
+            <b>Tech Stack:</b> HTML5, Scss, JavaScript, Gsap, Vanta
+          </p>
+        </Project>
+        <Project
+          title={"Birdie Token Launchpad [Unavailable]"}
+          link={"sajal353.github.io/birdie-token-launchpad"}
+          image="/project-images/birdie-token.png"
+          dim
+        >
+          <p>
+            <b>Tech Stack:</b> HTML5, Scss, JavaScript, Vite
+          </p>
+        </Project>
+        <Project
+          title={"Cape Analytics [Unavailable]"}
+          link={"sajal353.github.io/cape-analytics"}
+          image="/project-images/cape-analytics.png"
+        >
+          <p>
+            <b>Tech Stack:</b> HTML5, Scss, JavaScript, Gsap
+          </p>
+        </Project>
+        <Project
+          title={"Portfolio [Hobby]"}
           link={"sajalbiswas.com"}
           image="/project-images/self.png"
           dim

@@ -1,18 +1,18 @@
 import styled from "styled-components";
 
-const Project = (props) => {
+const Project = ({ image, title, link, children, dim }) => {
   return (
     <StyledProject>
-      <img src={props.image} alt={props.title} className="webgl-img" />
-      <span>
-        <h3>{props.title}</h3>
+      <img src={image} alt={title} className="webgl-img" />
+      <span style={{ backgroundColor: dim ? "#1b1b1b" : "transparent" }}>
+        <h3>{title}</h3>
 
-        <a href={`https://${props.link}`} target="_blank" rel="noreferrer">
-          {props.link}
+        <a href={`https://${link}`} target="_blank" rel="noreferrer">
+          {link}
           <span></span>
         </a>
 
-        <p>{props.shortDescription}</p>
+        <div>{children}</div>
       </span>
     </StyledProject>
   );
@@ -33,12 +33,12 @@ const StyledProject = styled.div`
     align-items: center;
   }
   @media (max-width: 600px) {
-        width: 100%;
+    width: 100%;
   }
   img {
     width: 80%;
     @media (max-width: 600px) {
-        width: 100%;
+      width: 100%;
     }
   }
   span {
@@ -49,6 +49,7 @@ const StyledProject = styled.div`
     top: 50%;
     transform: translate(0%, -50%);
     transition: opacity 0.7s ease;
+    padding: 1rem;
     @media (max-width: 800px) {
       margin-top: 1rem;
       text-align: center;
@@ -56,9 +57,8 @@ const StyledProject = styled.div`
       transform: translate(0%, 0%);
       right: 0;
       opacity: 1;
-
     }
-    @media (hover: none){
+    @media (hover: none) {
       margin-top: 1rem;
       text-align: center;
       position: relative;
@@ -76,15 +76,15 @@ const StyledProject = styled.div`
         font-size: 1.2rem;
       }
     }
-    p {
+    div {
       font-size: 0.8rem;
-      margin-top: 0.5rem;
-      line-height: 1;
+      margin-top: 1rem;
       pointer-events: none;
+      max-width: 325px;
     }
     a {
       line-height: 1;
-      margin-top: 0.5rem;
+      margin-top: 1rem;
       text-decoration: none;
       font-size: 0.8rem;
       border-bottom: 1px solid rgba(228, 228, 228, 0);

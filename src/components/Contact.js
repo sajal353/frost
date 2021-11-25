@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import upwork from "../assets/brands/upwork.svg";
 import linkedin from "../assets/brands/linkedin.png";
+import github from "../assets/brands/Octocat.png";
 
 const Contact = () => {
   return (
@@ -21,9 +22,12 @@ const Contact = () => {
         >
           <img src={linkedin} alt="LinkedIn" />
         </a>
+        <a href="https://github.com/sajal353" target="_blank" rel="noreferrer">
+          <img src={github} alt="Github" />
+        </a>
       </div>
-      <a href="mailto:sajalbiswas353@gmail.com">
-        sajalbiswas353@gmail.com<span></span>
+      <a href="mailto:contact@sajalbiswas.com">
+        contact@sajalbiswas.com<span></span>
       </a>
     </StyledContact>
   );
@@ -41,7 +45,7 @@ const StyledContact = styled.div`
   h1 {
     font-size: 4rem;
     text-align: center;
-    @media (max-width: 768px){
+    @media (max-width: 768px) {
       font-size: 2rem;
     }
   }

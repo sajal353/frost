@@ -52,6 +52,7 @@ const StyledProject = styled.div`
     padding: 1rem;
     @media (max-width: 800px) {
       margin-top: 1rem;
+      padding: 1rem 0;
       text-align: center;
       position: relative;
       transform: translate(0%, 0%);
@@ -83,6 +84,7 @@ const StyledProject = styled.div`
       max-width: 325px;
     }
     a {
+      display: inline-block;
       line-height: 1;
       margin-top: 1rem;
       text-decoration: none;

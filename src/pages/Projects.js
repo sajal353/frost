@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import WebGL from "../components/WebGL";
 import Contact from "../components/Contact";
 import imagesLoaded from "imagesloaded";
-import _ from "lodash";
 
 const Projects = () => {
   const webglRef = useRef(null);
@@ -25,12 +24,6 @@ const Projects = () => {
           dom: webglRef.current,
         });
       }
-    );
-    window.addEventListener(
-      "resize",
-      _.debounce(() => {
-        window.location.reload();
-      }, 100)
     );
   }, []);
 

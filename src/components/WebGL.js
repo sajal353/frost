@@ -1,93 +1,99 @@
-import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import imagesLoaded from 'imagesloaded';
-import FontFaceObserver from 'fontfaceobserver';
-import gsap from 'gsap';
+import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import imagesLoaded from "imagesloaded";
+import FontFaceObserver from "fontfaceobserver";
+import gsap from "gsap";
 
 export default class WebGL {
-    constructor(options) {
-        this.sizes = {
-            width: window.innerWidth,
-            height: window.innerHeight
-        };
+  constructor(options) {
+    this.sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
 
-        this.scene = new THREE.Scene();
-        // this.scene.background = new THREE.Color(0x1b1b1b);
+    this.scene = new THREE.Scene();
+    // this.scene.background = new THREE.Color(0x1b1b1b);
 
-        this.fov = (180 * (2 * Math.atan(window.innerHeight / 2 / 1000))) / Math.PI;
+    this.fov = (180 * (2 * Math.atan(window.innerHeight / 2 / 1000))) / Math.PI;
 
-        this.camera = new THREE.PerspectiveCamera(this.fov, this.sizes.width / this.sizes.height, 1, 2000);
-        this.camera.position.z = 1000;
+    this.camera = new THREE.PerspectiveCamera(
+      this.fov,
+      this.sizes.width / this.sizes.height,
+      1,
+      2000
+    );
+    this.camera.position.z = 1000;
 
-        this.scene.add(this.camera);
+    this.scene.add(this.camera);
 
-        this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: true
-        });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
 
-        this.renderer.setSize(this.sizes.width, this.sizes.height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.setSize(this.sizes.width, this.sizes.height);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
 
-        (options.dom).appendChild(this.renderer.domElement);
+    options.dom.appendChild(this.renderer.domElement);
 
-        this.clock = new THREE.Clock();
+    this.clock = new THREE.Clock();
 
-        this.textureLoader = new THREE.TextureLoader();
+    this.textureLoader = new THREE.TextureLoader();
 
-        this.images = [...document.querySelectorAll('.webgl-img')];
+    this.images = [...document.querySelectorAll(".webgl-img")];
 
-        const fontSatoshi = new Promise(resolve => {
-            new FontFaceObserver("Satoshi").load().then(() => {
-                resolve();
-            });
-        });
+    const fontSatoshi = new Promise((resolve) => {
+      new FontFaceObserver("Satoshi").load().then(() => {
+        resolve();
+      });
+    });
 
-        const preloadImages = new Promise((resolve, reject) => {
-            imagesLoaded(document.querySelectorAll("img"), { background: true }, resolve);
-        });
+    const preloadImages = new Promise((resolve, reject) => {
+      imagesLoaded(
+        document.querySelectorAll("img"),
+        { background: true },
+        resolve
+      );
+    });
 
-        let allDone = [fontSatoshi, preloadImages];
+    let allDone = [fontSatoshi, preloadImages];
 
-        this.currentScroll = 0;
+    this.currentScroll = 0;
 
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
 
-        Promise.all(allDone).then(() => {
+    Promise.all(allDone).then(() => {
+      this.addImages();
+      this.setPosition();
 
-            this.addImages();
-            this.setPosition();
+      this.mouseMovement();
+      this.setupResize();
+      this.playGround();
+      this.composerPass();
+      this.resize();
+      this.tick();
 
-            this.mouseMovement();
-            this.setupResize();
-            this.playGround();
-            this.composerPass();
-            this.resize();
-            this.tick();
+      window.addEventListener("scroll", () => {
+        this.currentScroll = window.scrollY;
+        this.setPosition();
+      });
+    });
+  }
 
-            window.addEventListener('scroll', () => {
-                this.currentScroll = window.scrollY;
-                this.setPosition();
-            });
+  composerPass() {
+    this.composer = new EffectComposer(this.renderer);
+    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(this.renderPass);
 
-        })
-
-    }
-
-    composerPass() {
-        this.composer = new EffectComposer(this.renderer);
-        this.renderPass = new RenderPass(this.scene, this.camera);
-        this.composer.addPass(this.renderPass);
-
-        this.myEffect = {
-            uniforms: {
-                "tDiffuse": { value: null },
-            },
-            vertexShader: `
+    this.myEffect = {
+      uniforms: {
+        tDiffuse: { value: null },
+      },
+      vertexShader: `
                 varying vec2 vUv;
 
                 void main() {
@@ -95,7 +101,7 @@ export default class WebGL {
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
-            fragmentShader: `
+      fragmentShader: `
                 uniform sampler2D tDiffuse;
                 varying vec2 vUv;
                 
@@ -105,63 +111,61 @@ export default class WebGL {
                     newUV.x -= (vUv.x - 0.5) * 0.1 * area;
                     gl_FragColor = texture2D(tDiffuse, newUV);
                 }
-            `
-        }
+            `,
+    };
 
-        this.customPass = new ShaderPass(this.myEffect);
-        this.customPass.renderToScreen = true;
+    this.customPass = new ShaderPass(this.myEffect);
+    this.customPass.renderToScreen = true;
 
-        this.composer.addPass(this.customPass);
-    }
+    this.composer.addPass(this.customPass);
+  }
 
-    mouseMovement() {
-        window.addEventListener('mousemove', (event) => {
-            this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  mouseMovement() {
+    window.addEventListener("mousemove", (event) => {
+      this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-            this.raycaster.setFromCamera(this.mouse, this.camera);
+      this.raycaster.setFromCamera(this.mouse, this.camera);
 
-            const intersects = this.raycaster.intersectObjects(this.scene.children)
+      const intersects = this.raycaster.intersectObjects(this.scene.children);
 
-            if (intersects.length > 0) {
-                let obj = intersects[0].object;
-                obj.material.uniforms.hover.value = intersects[0].uv;
-            }
+      if (intersects.length > 0) {
+        let obj = intersects[0].object;
+        obj.material.uniforms.hover.value = intersects[0].uv;
+      }
+    });
+  }
 
-        });
-    }
+  setupResize() {
+    window.addEventListener("resize", this.resize.bind(this));
+    window.addEventListener("resize", this.setPosition.bind(this));
+  }
 
-    setupResize() {
-        window.addEventListener("resize", this.resize.bind(this));
-        window.addEventListener("resize", this.setPosition.bind(this));
-    }
+  resize() {
+    this.sizes.width = window.innerWidth;
+    this.sizes.height = window.innerHeight;
 
-    resize() {
-        this.sizes.width = window.innerWidth;
-        this.sizes.height = window.innerHeight;
+    this.camera.aspect = this.sizes.width / this.sizes.height;
+    this.camera.updateProjectionMatrix();
 
-        this.camera.aspect = this.sizes.width / this.sizes.height;
-        this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.sizes.width, this.sizes.height);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        this.renderer.setSize(this.sizes.width, this.sizes.height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.composer.setSize(this.sizes.width, this.sizes.height);
+    this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  }
 
-        this.composer.setSize(this.sizes.width, this.sizes.height);
-        this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    }
-
-    addImages() {
-
-        this.material = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                uImage: { value: 0 },
-                hover: { value: new THREE.Vector2(0.5, 0.5) },
-                hoverState: { value: 0 }
-            },
-            side: THREE.DoubleSide,
-            wireframe: false,
-            vertexShader: `
+  addImages() {
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        uImage: { value: 0 },
+        hover: { value: new THREE.Vector2(0.5, 0.5) },
+        hoverState: { value: 0 },
+      },
+      side: THREE.DoubleSide,
+      wireframe: false,
+      vertexShader: `
                         //	Classic Perlin 3D Noise 
                         //	by Stefan Gustavson
                         //
@@ -259,7 +263,7 @@ export default class WebGL {
                             gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
                         }
                     `,
-            fragmentShader: `
+      fragmentShader: `
                     uniform sampler2D uImage;
                     uniform float time;
                     uniform float hoverState;
@@ -286,86 +290,77 @@ export default class WebGL {
                         gl_FragColor = f;
                         gl_FragColor.rgb += 0.01 * vec3(vNoise);
                     }
-                    `
+                    `,
+    });
+
+    this.materials = [];
+
+    this.imageStore = this.images.map((img) => {
+      let bounds = img.getBoundingClientRect(0);
+
+      let geometry = new THREE.PlaneBufferGeometry(
+        bounds.width,
+        bounds.height,
+        32,
+        32
+      );
+
+      let texture = new THREE.Texture(img);
+      texture.needsUpdate = true;
+
+      let material = this.material.clone();
+
+      img.addEventListener("mouseenter", () => {
+        gsap.to(material.uniforms.hoverState, {
+          duration: 1,
+          value: 1,
         });
+      });
 
-        this.materials = [];
-
-        this.imageStore = this.images.map(img => {
-
-            let bounds = img.getBoundingClientRect(0);
-
-            let geometry = new THREE.PlaneBufferGeometry(bounds.width, bounds.height, 32, 32);
-
-            let texture = new THREE.Texture(img);
-            texture.needsUpdate = true;
-
-            let material = this.material.clone();
-
-            img.addEventListener('mouseenter', () => {
-                gsap.to(material.uniforms.hoverState, {
-                    duration: 1,
-                    value: 1
-                });
-            });
-
-            img.addEventListener('mouseout', () => {
-                gsap.to(material.uniforms.hoverState, {
-                    duration: 1,
-                    value: 0
-                });
-            });
-
-            this.materials.push(material);
-
-            material.uniforms.uImage.value = texture;
-
-            let mesh = new THREE.Mesh(geometry, material);
-
-            this.scene.add(mesh);
-
-            return {
-                img: img,
-                mesh: mesh,
-                top: bounds.top,
-                left: bounds.left,
-                width: bounds.width,
-                height: bounds.height
-            }
+      img.addEventListener("mouseout", () => {
+        gsap.to(material.uniforms.hoverState, {
+          duration: 1,
+          value: 0,
         });
-    }
+      });
 
-    setPosition() {
-        this.imageStore.forEach(o => {
-            o.mesh.position.y = this.currentScroll - o.top + this.sizes.height / 2 - o.height / 2;
-            o.mesh.position.x = o.left - this.sizes.width / 2 + o.width / 2;
-        });
-    }
+      this.materials.push(material);
 
-    playGround() {
+      material.uniforms.uImage.value = texture;
 
+      let mesh = new THREE.Mesh(geometry, material);
 
-    }
+      this.scene.add(mesh);
 
-    tick() {
-        let elapsedTime = this.clock.getElapsedTime();
-        this.materials.forEach(m => {
-            m.uniforms.time.value = elapsedTime;
-        });
+      return {
+        img: img,
+        mesh: mesh,
+        top: bounds.top,
+        left: bounds.left,
+        width: bounds.width,
+        height: bounds.height,
+      };
+    });
+  }
 
-        window.requestAnimationFrame(this.tick.bind(this));
-        // this.renderer.render(this.scene, this.camera);
-        this.composer.render();
-    }
+  setPosition() {
+    this.imageStore.forEach((o) => {
+      o.mesh.position.y =
+        this.currentScroll - o.top + this.sizes.height / 2 - o.height / 2;
+      o.mesh.position.x = o.left - this.sizes.width / 2 + o.width / 2;
+    });
+  }
+
+  playGround() {}
+
+  tick() {
+    let elapsedTime = this.clock.getElapsedTime();
+    this.materials.forEach((m) => {
+      m.uniforms.time.value = elapsedTime;
+    });
+
+    window.requestAnimationFrame(this.tick.bind(this));
+    // this.renderer.render(this.scene, this.camera);
+    this.composer.render();
+  }
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -1,27 +1,54 @@
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import Project from "../components/Project";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import WebGL from "../components/WebGL";
 import Contact from "../components/Contact";
+import imagesLoaded from "imagesloaded";
+import _ from "lodash";
 
 const Projects = () => {
+  const webglRef = useRef(null);
+  const projectRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    new WebGL({
-      dom: document.querySelector(".webgl"),
-    });
+    window.scrollTo(0, 0);
+    imagesLoaded(
+      document.querySelectorAll(".webgl-img"),
+      {
+        background: true,
+      },
+      () => {
+        setIsLoading(false);
+        new WebGL({
+          dom: webglRef.current,
+        });
+      }
+    );
+    window.addEventListener(
+      "resize",
+      _.debounce(() => {
+        window.location.reload();
+      }, 100)
+    );
   }, []);
 
   return (
     <motion.div
       key="projects"
+      ref={projectRef}
       animate={{ opacity: 1, transition: { duration: 1 } }}
       initial={{ opacity: 0 }}
       exit={{ opacity: 0, transition: { duration: 1 } }}
+      style={{
+        overflow: isLoading ? "hidden" : "auto",
+        height: isLoading ? "100vh" : "auto",
+      }}
     >
-      <div className="webgl"></div>
+      <div className="webgl" ref={webglRef}></div>
       <StyledProjects>
-        <h1>Projects</h1>
+        <h1>{isLoading ? "Loading Projects..." : "Projects"}</h1>
         <Project
           title={"Mozaaq"}
           link={"mozaaq.com"}
@@ -141,6 +168,7 @@ const StyledProjects = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
+  position: relative;
   @media (max-width: 600px) {
     margin-top: 4rem;
   }

@@ -18,9 +18,9 @@ const Nav = () => {
         </LogoText>
       </span>
       <span>
-        <StyledLink to="/projects">
+        {/* <StyledLink to="/projects">
           Projects<span></span>
-        </StyledLink>
+        </StyledLink> */}
         <StyledLink to="/contact">
           Contact<span></span>
         </StyledLink>
